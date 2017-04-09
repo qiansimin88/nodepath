@@ -1,0 +1,25 @@
+{
+  "name": "nodepath",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "nodepath": "./bin/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qiansimin88/nodepath.git"
+  },
+  "keywords": [
+    "node"
+  ],
+  "author": "qsm",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/qiansimin88/nodepath/issues"
+  },
+  "homepage": "https://github.com/qiansimin88/nodepath#readme"
+}
