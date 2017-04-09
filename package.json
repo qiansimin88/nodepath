@@ -1,7 +1,7 @@
 {
   "name": "nodepath",
   "version": "1.0.0",
-  "description": "",
+  "description": "update some npm package",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,5 +21,10 @@
   "bugs": {
     "url": "https://github.com/qiansimin88/nodepath/issues"
   },
-  "homepage": "https://github.com/qiansimin88/nodepath#readme"
+  "homepage": "https://github.com/qiansimin88/nodepath#readme",
+  "dependencies": {
+    "cli-table2": "^0.2.0",
+    "commander": "^2.9.0",
+    "superagent": "^3.5.2"
+  }
 }
