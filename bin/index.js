@@ -11,10 +11,10 @@ const l = console.log;
 const w = console.warn;
 const promiseItem = Promise.resolve;
 
-let tablePrinter = new Table({
-    head: ['索引', '匹配到的包', '当前的版本号', '要升级到的版本号', '处理'],
-    colWidths: [20, 30, 20, 20, 20]
-});
+let rootPath = '';  //根目录
+let updatePackgeName = '';  //需要升级的包名字
+let updateVersion = '';  //将要升级的版本号
+let tablePrinter = null;
 
 function std (code, str) {
     l(str || 'gg');
@@ -39,9 +39,43 @@ function handlerAllFile( c, k ) {
             resolve( allPathAarray );
         });
     }).then( data => {
-        console.log(data);
+        var allpipie = [];
+        var resultArray = [];
+
+        data.map( (o, i) => {
+            resultArray = [i, o];
+            resultArray[3]  = updateVersion;
+            tablePrinter.push( resultArray );
+            allpipie.push(handlerPackage( o ));
+        });
+        Promise.all(allpipie)
+            .then(data => {
+                data.map((o, i) => {
+                    tablePrinter[i][2] = o;
+                    tablePrinter[i][4] = (function () {
+                        return 'n';
+                    })();
+                });
+                console.log(tablePrinter.toString());
+            });
     }).catch( err => {
-        std(1);
+        std(1, err);
+    });
+};
+
+function handlerPackage ( p ) {
+    let packJSONFilePath = path.join( rootPath, p, 'package.json');
+    let nowVersion = '';
+    return new Promise((resolve, reject) => {
+        fs.readFile( packJSONFilePath, 'utf-8', (err, data) => {
+            if( err ) {
+                std(1);
+                reject(err);
+            }
+            var translateData = JSON.parse( data );
+            nowVersion = translateData.dependencies[updatePackgeName] || translateData.devDependencies[updatePackgeName] || '没有这个包'; 
+            resolve(nowVersion);
+        });
     });
 };
 
@@ -67,7 +101,7 @@ const yargs = require('yargs')
                                 type: 'string'   //参数类型
                              },
                              'c': {
-                                 alias: 'ced',
+                                 alias: 'cwd',
                                  description: '包含所有项目的目录绝对路径',
                                  demand: true,
                                  default: '/Users/qsm/Code',
@@ -81,14 +115,14 @@ const yargs = require('yargs')
                         });
                     },
                     argv => {                   //handler  接受命令行参数
-                        // console.log(argv.k);
-                        // console.log(argv.p);
-                        // console.log(argv.c);
-                        // console.log(argv.v);
+                        rootPath = argv.c;
+                        updatePackgeName = argv.p;
+                        updateVersion = argv.v;
+                        tablePrinter = new Table({
+                            head: ['索引', '匹配到的项目', `当前${updatePackgeName}的版本号`, `${updatePackgeName}升级到的版本号`, '处理'],
+                            colWidths: [8, 35, 20, 20, 20]
+                        });
                         handlerAllFile( argv.c, argv.k );
-                        // console.log(process.cwd());  //命令路径
-                        // process.exit(1);   //失败
-                        // process.exit(0);   //成功
                     }
                 )
                 .help('h')   //  输入 -h 显示帮助信息
