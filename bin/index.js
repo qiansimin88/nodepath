@@ -15,12 +15,14 @@ let rootPath = '';  //根目录
 let updatePackgeName = '';  //需要升级的包名字
 let updateVersion = '';  //将要升级的版本号
 let tablePrinter = null;
+let allFileArray = {}; 
 
 function std (code, str) {
     l(str || 'gg');
     process.exit(code);
 };
 
+//处理IO
 function handlerAllFile( c, k ) {
     let allPathAarray = [];
     let re = new RegExp(k, 'i');
@@ -40,22 +42,31 @@ function handlerAllFile( c, k ) {
         });
     }).then( data => {
         var allpipie = [];
-        var resultArray = [];
 
         data.map( (o, i) => {
-            resultArray = [i, o];
-            resultArray[3]  = updateVersion;
-            tablePrinter.push( resultArray );
-            allpipie.push(handlerPackage( o ));
+            if( handlerPackage( o ) ) {
+                allFileArray[i] = [ i, o, '', updateVersion ];
+                tablePrinter.push( [i ,o, '', updateVersion ] );
+                allpipie.push(handlerPackage( o ));
+            }
         });
         Promise.all(allpipie)
             .then(data => {
                 data.map((o, i) => {
+                    allFileArray[i][2] = o;
                     tablePrinter[i][2] = o;
-                    tablePrinter[i][4] = (function () {
-                        return 'n';
-                    })();
+                    tablePrinter[i][4] = (function (v1, v2) {
+                        var str = '';
+                        var result = compareVersion( v1, v2 );
+                        if( result === 1 || result === 0) {
+                            str = '不处理';
+                        }else if( result === -1 ) {
+                            str = '升级';
+                        }
+                        return str;
+                    })( allFileArray[i][2].substring(1), allFileArray[i][3] );
                 });
+                // console.log(allFileArray);
                 console.log(tablePrinter.toString());
             });
     }).catch( err => {
@@ -63,6 +74,7 @@ function handlerAllFile( c, k ) {
     });
 };
 
+//读取版本号  返回promise
 function handlerPackage ( p ) {
     let packJSONFilePath = path.join( rootPath, p, 'package.json');
     let nowVersion = '';
@@ -73,11 +85,37 @@ function handlerPackage ( p ) {
                 reject(err);
             }
             var translateData = JSON.parse( data );
-            nowVersion = translateData.dependencies[updatePackgeName] || translateData.devDependencies[updatePackgeName] || '没有这个包'; 
+            nowVersion = translateData.dependencies[updatePackgeName] || translateData.devDependencies[updatePackgeName] || ''; 
             resolve(nowVersion);
         });
     });
 };
+//比较版本号  1 : v1 > v2 -1 : v1 < v2 0: v1 === v2 
+function compareVersion (v1, v2) {
+    //补充占位符  因为版本号的特性 不是很好比较 如果每个位置都是三位数字的话 就比较好比较了
+    let supplementItem = ['', '0', '00', '000'];
+        v1 = v1.split('.').map( _ => {
+            return _ + supplementItem[3 - _.length]; 
+        }),
+        v2 = v2.split('.').map( _ => {
+            return _ + supplementItem[3 - _.length]; 
+        });
+    let max = v1.length > v2.length ? v1 : v2;
+    let diff = 0;
+    for( var i = 0; i < max.length; i++ ) {
+        diff = v1[i] - v2[i]
+        if( diff !== 0 ) {
+            break;
+        }
+    } 
+    if( diff > 0 ) {
+        return 1;
+    }else if( diff < 0 ) {
+        return -1;
+    }else {
+        return 0;
+    }
+}
 
 const yargs = require('yargs')
                 .command(
@@ -131,10 +169,6 @@ const yargs = require('yargs')
                 // .array('n')   //参数是数组形式  
                 .epilog('copyright qsm@shining3d')   //结尾文字
                 .argv;
-
-
-
-
 // yargs
 //     .allowUnknownOption()
 //     .version('1.1.1')
