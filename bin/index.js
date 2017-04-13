@@ -21,7 +21,6 @@ function std (code, str) {
     l(str || 'gg');
     process.exit(code);
 };
-
 //处理IO
 function handlerAllFile( c, k ) {
     let allPathAarray = [];
@@ -40,44 +39,64 @@ function handlerAllFile( c, k ) {
             });
             resolve( allPathAarray );
         });
-    }).then( data => {
+    }).then( dirdata => {
         var allpipie = [];
-
-        data.map( (o, i) => {
-            if( handlerPackage( o ) ) {
-                allFileArray[i] = [ i, o, '', updateVersion ];
-                tablePrinter.push( [i ,o, '', updateVersion ] );
-                allpipie.push(handlerPackage( o ));
-            }
-        });
-        Promise.all(allpipie)
-            .then(data => {
-                data.map((o, i) => {
-                    allFileArray[i][2] = o;
-                    tablePrinter[i][2] = o;
-                    tablePrinter[i][4] = (function (v1, v2) {
-                        var str = '';
-                        var result = compareVersion( v1, v2 );
-                        if( result === 1 || result === 0) {
-                            str = '不处理';
-                        }else if( result === -1 ) {
-                            str = '升级';
+        var itempipe = [];
+        dirdata.map( (o, i) => {
+            var itemPromise = new Promise((resolve, reject) => {
+                handlerPackage( o )
+                    .then(packdata => {
+                        if( packdata !== 'null' ) {
+                            resolve( o );
+                        }else {
+                            resolve( false );
                         }
-                        return str;
-                    })( allFileArray[i][2].substring(1), allFileArray[i][3] );
-                });
-                // console.log(allFileArray);
-                console.log(tablePrinter.toString());
+                    })
+            })
+            itempipe.push(itemPromise);
+        });
+        
+        Promise.all(itempipe)
+            .then(data => {
+               data.filter( o => o !== false).map((_ , i) => {
+                    allFileArray[i] = [ i, _, '', updateVersion ];
+                    tablePrinter.push( [i , _, '', updateVersion ] );
+                    allpipie.push(handlerPackage( _ ));
+               });
+               return data;
+            })
+            .then(itemData => {
+                 Promise.all(allpipie)
+                    .then(packdataArray => {
+                        packdataArray.map((o, i) => {
+                            allFileArray[i][2] = o;
+                            tablePrinter[i][2] = o;
+                            tablePrinter[i][4] = (function (v1, v2) {
+                                var str = '';
+                                var result = compareVersion( v1, v2 );
+                                if( result === 1 || result === 0) {
+                                    str = '不处理';
+                                }else if( result === -1 ) {
+                                    str = '升级';
+                                }
+                                return str;
+                            })( allFileArray[i][2].substring(1), allFileArray[i][3] );
+                        });
+                        console.log(tablePrinter.toString());
+                    });
+            })
+            .catch( err => {
+                console.log('out err', err);
             });
+       
     }).catch( err => {
         std(1, err);
     });
 };
-
 //读取版本号  返回promise
 function handlerPackage ( p ) {
     let packJSONFilePath = path.join( rootPath, p, 'package.json');
-    let nowVersion = '';
+    let nowVersion = '222';
     return new Promise((resolve, reject) => {
         fs.readFile( packJSONFilePath, 'utf-8', (err, data) => {
             if( err ) {
@@ -85,7 +104,7 @@ function handlerPackage ( p ) {
                 reject(err);
             }
             var translateData = JSON.parse( data );
-            nowVersion = translateData.dependencies[updatePackgeName] || translateData.devDependencies[updatePackgeName] || ''; 
+            nowVersion = translateData.dependencies[updatePackgeName] || translateData.devDependencies[updatePackgeName] || 'null'; 
             resolve(nowVersion);
         });
     });
