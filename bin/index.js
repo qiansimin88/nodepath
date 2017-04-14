@@ -7,9 +7,11 @@ const Table = require('cli-table2');
 const child_process = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const readline = require('readline');
 const l = console.log;
 const w = console.warn;
 const promiseItem = Promise.resolve;
+require('shelljs/global');
 
 let rootPath = '';  //根目录
 let updatePackgeName = '';  //需要升级的包名字
@@ -66,7 +68,7 @@ function handlerAllFile( c, k ) {
                return data;
             })
             .then(itemData => {
-                 Promise.all(allpipie)
+                return Promise.all(allpipie)
                     .then(packdataArray => {
                         packdataArray.map((o, i) => {
                             allFileArray[i][2] = o;
@@ -76,14 +78,20 @@ function handlerAllFile( c, k ) {
                                 var result = compareVersion( v1, v2 );
                                 if( result === 1 || result === 0) {
                                     str = '不处理';
+                                    allFileArray[i][4] = 'noUpdate';
                                 }else if( result === -1 ) {
+                                    allFileArray[i][4] = 'update';
                                     str = '升级';
                                 }
                                 return str;
                             })( allFileArray[i][2].substring(1), allFileArray[i][3] );
                         });
-                        console.log(tablePrinter.toString());
+                        return ''
                     });
+            })
+            .then( d2 => {
+                console.log(tablePrinter.toString());
+                readlineHandler(shellUpdate);
             })
             .catch( err => {
                 console.log('out err', err);
@@ -93,6 +101,38 @@ function handlerAllFile( c, k ) {
         std(1, err);
     });
 };
+
+//升级
+function shellUpdate () {
+    console.log(allFileArray);
+    console.log('升级中------');
+    exec('git status && git add . && git commit -m "fix" && git push ');
+}
+
+//人机交互
+function readlineHandler( cb ) {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    rl.setPrompt('是否一键升级所有建议升级的项目? y/n');
+
+    rl.prompt();
+
+    rl.on('line', _ => {
+        if( _ === 'y' ) {
+            cb();
+        }else {
+            rl.emit('close');
+        }
+    });
+
+    rl.on('close', _ => {
+        std(1, '告辞');
+    });
+}
+
 //读取版本号  返回promise
 function handlerPackage ( p ) {
     let packJSONFilePath = path.join( rootPath, p, 'package.json');
@@ -177,7 +217,7 @@ const yargs = require('yargs')
                         updateVersion = argv.v;
                         tablePrinter = new Table({
                             head: ['索引', '匹配到的项目', `当前${updatePackgeName}的版本号`, `${updatePackgeName}升级到的版本号`, '处理'],
-                            colWidths: [8, 35, 20, 20, 20]
+                            colWidths: [8, 30, 25, 25, 15]
                         });
                         handlerAllFile( argv.c, argv.k );
                     }

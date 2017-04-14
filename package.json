@@ -25,6 +25,7 @@
   "dependencies": {
     "cli-table2": "^0.2.0",
     "commander": "^2.9.0",
+    "shelljs": "^0.7.7",
     "superagent": "^3.5.2",
     "yargs": "^7.0.2"
   }
