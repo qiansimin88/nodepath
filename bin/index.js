@@ -22,9 +22,10 @@ let updatePackgeName = '';  //需要升级的包名字
 let updateVersion = '';  //将要升级的版本号
 let tablePrinter = null;
 let allFileArray = {}; 
+let hasUpdatePackageModule = false;   //是否有可升级的项目
 
 function std (code, str) {
-     w(str || 'gg');
+    console.error(w(str || 'gg'));
     process.exit(code);
 };
 //处理IO
@@ -84,6 +85,7 @@ function handlerAllFile( c, k ) {
                                     str = '不处理';
                                     allFileArray[i][4] = 'noUpdate';
                                 }else if( result === -1 ) {
+                                    hasUpdatePackageModule = true; 
                                     allFileArray[i][4] = 'update';
                                     str = '升级';
                                 }
@@ -95,6 +97,7 @@ function handlerAllFile( c, k ) {
             })
             .then( d2 => {
                 console.log(tablePrinter.toString());
+                // shellUpdate();
                 readlineHandler(shellUpdate);
             })
             .catch( err => {
@@ -108,10 +111,23 @@ function handlerAllFile( c, k ) {
 
 //升级
 function shellUpdate () {
-    console.log(rootPath);
-    console.log(allFileArray);
-    console.log('升级中------');
-    exec('git status && git add . && git commit -m "fix" && git push ');
+    for( var i in allFileArray ) {
+        var item = allFileArray[i];
+        var itemPath = path.join( rootPath, item[1] );
+        var isUp = item[4] === 'update';
+        if(!isUp) {
+            continue;
+            return;
+        }
+        //shell
+        cd(itemPath);
+        var loadingUp = exec(`git checkout develop && git pull && npm install ${updatePackgeName}@${updateVersion} --save && git checkout daily && git pull && git merge develop && git push && git checkout test && git pull && git merge daily && git push`, (code, stdout, stderr) => {
+            console.log( l( '退出码: ' + code ) );
+            console.log( l( stdout ) );
+            console.log( w( stderr ) );
+            std(coede, 'success!');
+        });
+    }
 }
 
 //人机交互
@@ -127,6 +143,7 @@ function readlineHandler( cb ) {
 
     rl.on('line', _ => {
         if( _ === 'y' ) {
+            if( !hasUpdatePackageModule ) std(1, '没有可更新的项目 my brother 🙄');
             cb();
         }else {
             rl.emit('close');
