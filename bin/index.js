@@ -11,8 +11,9 @@ const readline = require('readline');
 const progressBar = require('progress');   //loading 进度条
 const chalk = require('chalk');   //颜色色彩输出
 
-const l = console.log;
-const w = console.warn;
+
+const l = chalk.bold.cyan;   //青粗
+const w = chalk.bold.red;      //红粗
 const promiseItem = Promise.resolve;
 require('shelljs/global');
 
@@ -23,7 +24,7 @@ let tablePrinter = null;
 let allFileArray = {}; 
 
 function std (code, str) {
-    l(str || 'gg');
+     w(str || 'gg');
     process.exit(code);
 };
 //处理IO
