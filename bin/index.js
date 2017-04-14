@@ -104,6 +104,7 @@ function handlerAllFile( c, k ) {
 
 //升级
 function shellUpdate () {
+    console.log(rootPath);
     console.log(allFileArray);
     console.log('升级中------');
     exec('git status && git add . && git commit -m "fix" && git push ');
