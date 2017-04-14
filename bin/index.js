@@ -8,6 +8,9 @@ const child_process = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
+const progressBar = require('progress');   //loading 进度条
+const chalk = require('chalk');   //颜色色彩输出
+
 const l = console.log;
 const w = console.warn;
 const promiseItem = Promise.resolve;
@@ -31,7 +34,7 @@ function handlerAllFile( c, k ) {
     new Promise((resolve, reject) => {
          fs.readdir( c, (err, files) => {
             if( err ) {
-                std(1);
+                std(1, err);
                 reject(err);
             }
             files.forEach( _ => {
@@ -141,7 +144,7 @@ function handlerPackage ( p ) {
     return new Promise((resolve, reject) => {
         fs.readFile( packJSONFilePath, 'utf-8', (err, data) => {
             if( err ) {
-                std(1);
+                std(1, err);
                 reject(err);
             }
             var translateData = JSON.parse( data );

@@ -23,8 +23,10 @@
   },
   "homepage": "https://github.com/qiansimin88/nodepath#readme",
   "dependencies": {
+    "chalk": "^1.1.3",
     "cli-table2": "^0.2.0",
     "commander": "^2.9.0",
+    "progress": "^2.0.0",
     "shelljs": "^0.7.7",
     "superagent": "^3.5.2",
     "yargs": "^7.0.2"
