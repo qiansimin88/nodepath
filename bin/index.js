@@ -8,7 +8,7 @@ const child_process = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const progressBar = require('progress');   //loading 进度条
+const ProgressBar = require('progress');   //loading 进度条
 const chalk = require('chalk');   //颜色色彩输出
 
 
@@ -23,6 +23,8 @@ let updateVersion = '';  //将要升级的版本号
 let tablePrinter = null;
 let allFileArray = {}; 
 let hasUpdatePackageModule = false;   //是否有可升级的项目
+let allUpdate = 0; //总共需要上传的数量
+let allFineshed = 0; //已经上传完成的数量
 
 function std (code, str) {
     console.error(w(str || 'gg'));
@@ -87,6 +89,7 @@ function handlerAllFile( c, k ) {
                                 }else if( result === -1 ) {
                                     hasUpdatePackageModule = true; 
                                     allFileArray[i][4] = 'update';
+                                    allUpdate ++;
                                     str = '升级';
                                 }
                                 return str;
@@ -108,9 +111,16 @@ function handlerAllFile( c, k ) {
         std(1, err);
     });
 };
-
 //升级
 function shellUpdate () {
+    let bar = new ProgressBar('  waiting🙄  [:bar] :percent :etas :elapsed', {
+        complete: '=',  //完成的样式
+        incomplete: '-',  //未完成的样式
+        width: 25,
+        total: allUpdate + 1   //总共上传的数量
+    });
+    bar.tick();
+
     for( var i in allFileArray ) {
         var item = allFileArray[i];
         var itemPath = path.join( rootPath, item[1] );
@@ -121,13 +131,30 @@ function shellUpdate () {
         }
         //shell
         cd(itemPath);
-        var loadingUp = exec(`git checkout develop && git pull && npm install ${updatePackgeName}@${updateVersion} --save && git checkout daily && git pull && git merge develop && git push && git checkout test && git pull && git merge daily && git push`, (code, stdout, stderr) => {
-            console.log( l( '退出码: ' + code ) );
-            console.log( l( stdout ) );
-            console.log( w( stderr ) );
-            std(coede, 'success!');
-        });
+        var loadingUp = exec(`git checkout develop && git pull && npm install ${updatePackgeName}@${updateVersion} --save && git add . && git commit -m 'update version ${updatePackgeName} to ${updateVersion} by Automatic script' && git push && git checkout daily && git pull && git merge develop && git push && git checkout test && git pull && git merge daily && git push`, { encoding: 'buffer', async: false });
+        if( loadingUp.code === 0 ) {
+            allFineshed ++;
+            bar.tick(allFineshed);
+            if( bar.complete ) {
+                allFineshedHandler()
+            }
+        }else {
+            std(1, '你写的有问题啊');
+        }
     }
+}
+
+function allFineshedHandler () {
+   std(0, '全部上传完毕😄'); 
+}
+
+function handlerGit (code, stdout, stderr) {
+     // console.log(l('buffer'));
+    // console.log(stdout);
+    console.log( l( '退出码: ' + code ) );
+    // console.log( l( stdout ) );
+    console.log( w( stderr ) );
+    std(code, 'complete');
 }
 
 //人机交互
