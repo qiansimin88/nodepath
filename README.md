@@ -1,4 +1,10 @@
-> 一个一键更新很多或者所有项目下面包的命令行工具，基于nodejs
+> 一个一键更新很多或者所有项目下面node_module包 的命令行工具，基于nodejs
+
+> 安装
+
+```
+npm install -g nodepath-qiansimin
+```
 
 > 示例1 ： 
 
