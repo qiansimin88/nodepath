@@ -31,21 +31,30 @@ function std (code, str) {
     process.exit(code);
 };
 //处理IO
-function handlerAllFile( c, k ) {
+function handlerAllFile( c, k, s ) {
     let allPathAarray = [];
-    let re = new RegExp(k, 'i');
-
     new Promise((resolve, reject) => {
          fs.readdir( c, (err, files) => {
-            if( err ) {
+            if ( err ) {
                 std(1, err);
                 reject(err);
             }
-            files.forEach( _ => {
-                if( re.test(_) ) {
-                    allPathAarray.push( _ );
-                }
-            });
+            if ( k ) {
+                let re = new RegExp(k, 'i');
+                files.forEach( _ => {
+                    if( re.test(_) ) {
+                        allPathAarray.push( _ );
+                    }
+                });
+            }else if ( s ) {
+                s.map( ( o, i ) => {
+                    if ( files.indexOf( o ) !== -1 ) {
+                        allPathAarray.push( o );
+                    }
+                });
+            }else {
+                std( 1, '缺少必须的参数-k或-s😆' );
+            }
             resolve( allPathAarray );
         });
     }).then( dirdata => {
@@ -193,7 +202,8 @@ function handlerPackage ( p ) {
                 reject(err);
             }
             var translateData = JSON.parse( data );
-            nowVersion = translateData.dependencies[updatePackgeName] || translateData.devDependencies[updatePackgeName] || 'null'; 
+            var controlFiled = translateData.dependencies || translateData.devDependencies;
+            nowVersion = controlFiled[updatePackgeName] || 'null'; 
             resolve(nowVersion);
         });
     });
@@ -235,9 +245,13 @@ const yargs = require('yargs')
                             'k': {
                                 alias: 'keyword',
                                 description: '输入关键字来匹配项目',
-                                demand: true,  //必选参数
-                                default: 'phoenix', //该参数的默认值
+                                // default: 'phoenix', //该参数的默认值
                                 type: 'string'   //参数类型
+                             },
+                             's': {   //多参数形式的 特别指定项目名  和上面的  k  二选一哦
+                                alias: 'special',
+                                description: '多参数选择项目名',
+                                array: 'special'
                              },
                              'p': {
                                 alias: 'packageName',
@@ -268,7 +282,8 @@ const yargs = require('yargs')
                             head: ['索引', '匹配到的项目', `当前${updatePackgeName}的版本号`, `${updatePackgeName}升级到的版本号`, '处理'],
                             colWidths: [8, 30, 25, 25, 15]
                         });
-                        handlerAllFile( argv.c, argv.k );
+
+                        handlerAllFile( argv.c, argv.k, argv.s );
                     }
                 )
                 .help('h')   //  输入 -h 显示帮助信息
