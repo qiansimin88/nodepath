@@ -1,6 +1,6 @@
 {
   "name": "nodepath-qiansimin",
-  "version": "1.0.3",
+  "version": "1.1.0",
   "description": "update some npm package",
   "main": "index.js",
   "scripts": {
